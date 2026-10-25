@@ -459,7 +459,10 @@ static void usage(void)
 	        "       fido-bridge [-v] [-s socket] FD\n"
 	        "\n"
 	        "  -s PATH  listen here instead of $PREFIX/tmp/fido.sock\n"
-	        "  -v       log every CTAPHID packet\n");
+	        "  -v       log every CTAPHID packet\n"
+	        "\n"
+	        "termux-usb can't pass options, so these also work as environment\n"
+	        "variables: FIDO_BRIDGE_SOCKET=PATH, FIDO_BRIDGE_VERBOSE=1\n");
 }
 
 static int parse_fd(const char *s)
@@ -476,11 +479,16 @@ static int parse_fd(const char *s)
 int main(int argc, char **argv)
 {
 	char sock_path[sizeof(((struct sockaddr_un *)0)->sun_path) + 64];
-	const char *sock_opt = NULL;
+	const char *sock_opt = getenv("FIDO_BRIDGE_SOCKET");
+	const char *verbose_env = getenv("FIDO_BRIDGE_VERBOSE");
 	int usb_fd = -1, lfd = -1, opt, rc = 1;
 	pthread_t reader;
 	int reader_started = 0;
 
+	if (sock_opt && !*sock_opt)
+		sock_opt = NULL;
+	if (verbose_env && *verbose_env && strcmp(verbose_env, "0") != 0)
+		g_verbose = 1;
 	while ((opt = getopt(argc, argv, "s:vh")) != -1) {
 		switch (opt) {
 		case 's': sock_opt = optarg; break;

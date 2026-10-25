@@ -3,66 +3,24 @@
 
 usage: fido-info [socket]   (default: $PREFIX/tmp/fido.sock)
 
-Install the library on Termux with:
-    pkg install python-cryptography && pip install fido2
+Starts the bridge with `fido up` if it isn't running. Doubles as the
+shortest example of using termux_fido in your own scripts.
 """
-import os
-import socket
 import sys
 
-# Python >= 3.13 on Android reports sys.platform == "android", which
-# python-fido2 rejects at import time. Its Linux backend loads fine there and
-# is never used here (we bring our own connection), so let it think "linux".
-_platform = sys.platform
-if _platform == "android":
-    sys.platform = "linux"
 try:
-    from fido2.ctap2 import Ctap2
-    from fido2.hid import CtapHidDevice
-    from fido2.hid.base import CtapHidConnection, HidDescriptor
-except ImportError:
-    sys.exit("python-fido2 is missing: pkg install python-cryptography && pip install fido2")
-finally:
-    sys.platform = _platform
-
-REPORT = 64
-
-
-class BridgeConnection(CtapHidConnection):
-    """A CTAPHID connection that sends 64-byte reports over the bridge socket."""
-
-    def __init__(self, path):
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.connect(path)
-
-    def write_packet(self, data):
-        self.sock.sendall(bytes(data).ljust(REPORT, b"\0")[:REPORT])
-
-    def read_packet(self):
-        buf = b""
-        while len(buf) < REPORT:
-            chunk = self.sock.recv(REPORT - len(buf))
-            if not chunk:
-                raise OSError("fido-bridge closed the connection")
-            buf += chunk
-        return buf
-
-    def close(self):
-        self.sock.close()
-
-
-def open_device(path):
-    desc = HidDescriptor(path, 0, 0, REPORT, REPORT, "fido-bridge", None)
-    return CtapHidDevice(desc, BridgeConnection(path))
+    import termux_fido  # must come before fido2 imports
+except ImportError as e:
+    sys.exit(str(e))
+from fido2.ctap2 import Ctap2
 
 
 def main():
-    prefix = os.environ.get("PREFIX", "/data/data/com.termux/files/usr")
-    path = sys.argv[1] if len(sys.argv) > 1 else prefix + "/tmp/fido.sock"
+    path = sys.argv[1] if len(sys.argv) > 1 else termux_fido.SOCKET
     try:
-        dev = open_device(path)
+        dev = termux_fido.open_device(path)
     except OSError as e:
-        sys.exit(f"cannot reach {path}: {e} (is fido-bridge running?)")
+        sys.exit(f"fido-info: {e}")
 
     info = Ctap2(dev).get_info()
     print(f"versions    {', '.join(info.versions)}")
