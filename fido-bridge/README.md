@@ -43,6 +43,15 @@ socket path. To pass options through termux-usb, wrap them in a script:
     # caps      0x05 WINK CBOR
     # wink      ok          <- the key blinks
 
+## Read the key's FIDO2 info
+
+    pkg install python-cryptography     # prebuilt; pip can't compile it on Termux
+    pip install fido2
+    fido-info
+
+`fido-info.py` is also a working example of plugging python-fido2 into the bridge: its
+`BridgeConnection` class is all a python-fido2 program needs.
+
 ## Socket protocol
 
 - `SOCK_STREAM`. Each message in either direction is **exactly 64 bytes**: one raw CTAPHID

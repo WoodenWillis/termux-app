@@ -12,6 +12,7 @@ fido-bridge: fido-bridge.c
 install: fido-bridge
 	install -Dm755 fido-bridge $(DESTDIR)$(PREFIX)/bin/fido-bridge
 	install -Dm755 fido-ping.py $(DESTDIR)$(PREFIX)/bin/fido-ping
+	install -Dm755 fido-info.py $(DESTDIR)$(PREFIX)/bin/fido-info
 
 clean:
 	rm -f fido-bridge
