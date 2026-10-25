@@ -10,12 +10,20 @@ import os
 import socket
 import sys
 
+# Python >= 3.13 on Android reports sys.platform == "android", which
+# python-fido2 rejects at import time. Its Linux backend loads fine there and
+# is never used here (we bring our own connection), so let it think "linux".
+_platform = sys.platform
+if _platform == "android":
+    sys.platform = "linux"
 try:
     from fido2.ctap2 import Ctap2
     from fido2.hid import CtapHidDevice
     from fido2.hid.base import CtapHidConnection, HidDescriptor
 except ImportError:
     sys.exit("python-fido2 is missing: pkg install python-cryptography && pip install fido2")
+finally:
+    sys.platform = _platform
 
 REPORT = 64
 
